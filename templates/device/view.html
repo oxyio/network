@@ -1,0 +1,14 @@
+{% extends 'object/base.html' %}
+
+{% block content %}
+    view device
+
+    {{ object.device_group.name }}
+    {{ object.user.name }}
+    {{ object.user_group.name }}
+
+    {{ assets(
+        'js/test.js', ('network', 'js/device.js'),
+        filters='jsmin', extension='js'
+    ) }}
+{% endblock %}

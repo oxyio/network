@@ -1,0 +1,31 @@
+{% if not ssh_form %}
+    {% set ssh_form={} %}
+{% endif %}
+
+<div><label for="ssh_hostname">Hostname (domain, IP, etc)</label>
+    <input type="text" name="ssh_host" id="ssh_host" value="{{ object.ssh_host }}" />
+</div>
+<div><label for="ssh_user">SSH User</label>
+    <input type="text" name="ssh_user" id="ssh_user" value="{{ object.ssh_user }}" />
+</div>
+<div>
+    <label for="ssh_password">SSH Password (not saved; optional, <a href="#">read more</a>)</label>
+    <input type="password" name="ssh_password" id="ssh_password" />
+</div>
+<div class="block">
+    <div class="quarter block"><label for="ssh_port">SSH Port</label>
+        <input type="text" name="ssh_port" id="ssh_port" value="{{ object.ssh_port }}" />
+    </div>
+    <div class="quarter block"><label for="stat_interval">Stat Interval</label>
+        <input type="text" name="stat_interval" id="stat_interval" value="{{ object.stat_interval }}" />
+    </div>
+    <div class="quarter align-bottom block checkbox">
+        <label for="ssh_sudo">Sudo User</label>
+        <input type="checkbox" name="ssh_sudo" id="ssh_sudo" {% if object.ssh_sudo %}checked{% endif %}/>
+    </div>
+    {% if ssh_form.submit %}
+        <div class="quarter align-bottom block">
+            <button class="button green right">{{ ssh_form.submit_text }}</button>
+        </div>
+    {% endif %}
+</div>

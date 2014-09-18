@@ -1,0 +1,46 @@
+{% import 'function/forms.html' as forms %}
+{% import 'function/messages.html' as messages %}
+{% extends 'base_user.html' %}
+
+{% block subheader %}
+    <section id="subheader"><div class="wrap">
+        <h1>Add New {{ object_name }}</h1>
+
+        <ul id="links">
+            <li><a href="{{ url_for('list_objects', module_name=module_name, objects_type=objects_type) }}">View own</a></li>
+            {% if has_any_objects_permission(module_name, objects_type, 'view') %}
+                <li><a class="red" href="{{ url_for('list_all_objects', module_name=module_name, objects_type=objects_type) }}">View all</a></li>
+            {% endif %}
+        </ul>
+    </div></section>
+{% endblock %}
+
+{% block content %}
+    <form action="#" method="post" class="block base">
+        <div class="block wide">
+            {{ messages.messages() }}
+        </div>
+
+        <div class="block third">
+            {{ forms.fields(add_form) }}
+        </div>
+
+        <div class="block third align-bottom">
+            <h2>SSH Details</h2>
+
+            {% set object = {
+                'ssh_port': 22,
+                'stat_interval': 10,
+                'ssh_sudo': true
+            } %}
+
+            {% set ssh_form={
+                'submit': true,
+                'submit_text': 'Add Device'
+            } %}
+            {% include 'device/ssh_form.html' %}
+        </div>
+
+        {{ csrf_input() }}
+    </form>
+{% endblock %}
