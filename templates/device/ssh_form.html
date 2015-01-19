@@ -2,7 +2,7 @@
     {% set ssh_form={} %}
 {% endif %}
 
-<div><label for="ssh_hostname">Hostname (domain, IP, etc)</label>
+<div><label for="ssh_host">Hostname (domain, IP, etc)</label>
     <input type="text" name="ssh_host" id="ssh_host" value="{{ object.ssh_host }}" />
 </div>
 <div><label for="ssh_user">SSH User</label>
@@ -20,7 +20,7 @@
         <input type="text" name="stat_interval" id="stat_interval" value="{{ object.stat_interval }}" />
     </div>
     <div class="quarter align-bottom block checkbox">
-        <label for="ssh_sudo">Sudo User</label>
+        <label for="ssh_sudo">Use sudo <a href="#">(?)</a></label>
         <input type="checkbox" name="ssh_sudo" id="ssh_sudo" {% if object.ssh_sudo %}checked{% endif %}/>
     </div>
     {% if ssh_form.submit %}

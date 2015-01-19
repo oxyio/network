@@ -1,31 +1,49 @@
 {% import 'function/forms.html' as forms %}
-{% import 'function/messages.html' as messages %}
+{% import 'function/flashes.html' as flashes %}
+{% import 'function/tasks.html' as tasks %}
 {% extends 'object/base.html' %}
 
 {% block content %}
-    <div class="block base">
-        <form action="{{ url_for('edit_object', module_name=module_name, object_type=object_type, object_id=object.id) }}" method="post" class="third block">
-            {{ messages.messages() }}
+    <form action="" method="post" class="block base">
+        <div class="third block">
+            {{ flashes.messages() }}
 
             {{ forms.fields(edit_form, object) }}
 
-            <button class="button green">Update</button>
-            <small><a href="{{ url_for('view_object', module_name=module_name, object_type=object_type, object_id=object.id) }}">back to: {{ object.name }}</a></small>
-
             {{ csrf_input() }}
-        </form>
+        </div>
 
-        <form action="{{ url_for('custom_function_object', module_name=module_name, object_type=object_type, object_id=object.id, func_name='ssh') }}" method="post" class="third block align-bottom">
+        <div class="third block align-bottom">
             <h2>SSH Details</h2>
 
-            {% set ssh_form={
+            {% if object.ssh_connected == False %}
+                <div class="message error">
+                    Oxypanel could not connect using these SSH details.
+                </div>
+            {% elif object.ssh_connected == None %}
+                {% set websocket_key = get_flashed_request('device_ssh_connect') %}
+                {% if websocket_key == None %}
+                    <div class="message warning">
+                        SSH test failed, please try again.
+                    </div>
+                {% else %}
+                    {{ tasks.task_subscribe(
+                        key=websocket_key,
+                        loading_message='Testing SSH connection...',
+                        end_message='Oxypanel is now connected to this device.',
+                        error_message='Oxypanel could not connect using these SSH details:'
+                    )}}
+                {% endif %}
+            {% endif %}
+
+            {% set ssh_form = {
                 'object_defaults': object,
-                'submit': true,
-                'submit_text': 'Update SSH'
+                'submit': True,
+                'submit_text': 'Update'
             } %}
             {% include 'device/ssh_form.html' %}
 
             {{ csrf_input() }}
-        </form>
-    </div>
+        </div>
+    </form>
 {% endblock %}
