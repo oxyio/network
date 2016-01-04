@@ -36,12 +36,13 @@
                 {% endif %}
             {% endif %}
 
-            {% set ssh_form = {
-                'object_defaults': object,
-                'submit': True,
-                'submit_text': 'Update'
-            } %}
-            {% include 'device/ssh_form.html' %}
+            <div class="block">
+                {% set ssh_form = {
+                    'submit': True,
+                    'submit_text': 'Update Device'
+                } %}
+                {% include 'device/ssh_form.html' %}
+            </div>
 
             {{ csrf_input() }}
         </div>

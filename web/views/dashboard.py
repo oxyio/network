@@ -1,6 +1,6 @@
 from flask import render_template, g
 
-from util.user import login_required
+from oxyio.web.util.user import login_required
 
 
 @login_required

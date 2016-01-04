@@ -1,2 +1,2 @@
 def status():
-    pass
+    return ''

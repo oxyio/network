@@ -1,80 +1,111 @@
-# Oxypanel Network
+# oxy.io Network
 # File: models/device.py
 # Desc: the device & device_group models
 
-from uuid import uuid4
+from socket import error as socket_error, gaierror
 
 from flask import request
-from paramiko import RSAKey, SSHException
-from pssh import (
-    SSHClient,
-    AuthenticationException, UnknownHostException, ConnectionErrorException
+from paramiko import (
+    SSHClient, RSAKey, MissingHostKeyPolicy, SSHException, AuthenticationException
 )
 
-import config
-from app import db
-from models.base import BaseObject, BaseItem
-from util.tasks import start_update_task, start_task, stop_task
-from util.web.flashes import flash_request
-from util.web.websockets import make_websocket_request
+from oxyio import settings
+from oxyio.app import db
+from oxyio.models.base import Object, Item
+from oxyio.util.log import logger
+from oxyio.util.tasks import start_update_task, start_task, stop_task
+from oxyio.web.util.flashes import flash_request
+from oxyio.web.util.websockets import make_websocket_request
 
-from modules.network.config import DEVICES
+from ..mappings import MAPPINGS
+from ..web.views.device import api_get_device_stats
+from ..helpers import (
+    parse_cpu_stats, parse_memory_stats, parse_disk_stats,
+    parse_disk_io_stats, parse_network_io_stats
+)
 
 
 # Many-many linking table (device <-> device group)
 device__group = db.Table('network_device__network_group',
-    db.Column('device_id', db.Integer, db.ForeignKey('network_device.id'), primary_key=True),
-    db.Column('device_group_id', db.Integer, db.ForeignKey('network_group.id'), primary_key=True)
+    db.Column(
+        'device_id', db.Integer, db.ForeignKey('network_device.id'),
+        primary_key=True
+    ),
+    db.Column(
+        'device_group_id', db.Integer, db.ForeignKey('network_group.id'),
+        primary_key=True
+    )
 )
 
 
-class DeviceGroup(BaseObject, db.Model):
+class DeviceGroup(Object, db.Model):
     NAME = 'network/group'
     TITLE = 'Group'
+
+    LIST_MRELATIONS = (
+        ('devices', 'network/device', {}),
+        ('ipblocks', 'network/ipblock', {'title': 'IP Blocks'})
+    )
 
     devices = db.relationship('Device', secondary=device__group)
 
 
-class DeviceFact(BaseItem, db.Model):
+class DeviceFact(Item, db.Model):
     NAME = 'network/device/fact'
     TITLE = 'Fact'
 
-    device_id = db.Column(db.Integer, db.ForeignKey('network_device.id', ondelete='CASCADE'), nullable=False)
+    device_id = db.Column(db.Integer,
+        db.ForeignKey('network_device.id', ondelete='CASCADE'),
+        nullable=False
+    )
     device = db.relationship('Device', backref=db.backref('facts'))
 
 
-# Device configs map (slug name -> display name)
-DEVICE_CONFIGS = {
-    key: config.NAME
-    for key, config in DEVICES.iteritems()
-}
-
-class Device(BaseObject, db.Model):
+class Device(Object, db.Model):
     NAME = 'network/device'
     TITLE = 'Device'
 
-    LIST_FIELDS = EDIT_FIELDS = [
-        ('status', {'text': 'enables or disables stat/log collection'}),
-        ('config', {'text': 'OS/Distro', 'enums': DEVICE_CONFIGS}),
-        ('location', {'text': 'for display/filtering only'})
-    ]
-    LIST_MRELATIONS = EDIT_MRELATIONS = [
-        ('network', 'group', 'groups', {})
-    ]
+    ES_DOCUMENTS = MAPPINGS
 
-    # Base exception
-    class DeviceError(Exception): pass
+    # No listing of status (just filter/edit)
+    LIST_FIELDS = (
+        ('location', {}),
+        ('ips', {'title': 'IPs', 'join': True}),
+    )
+
+    EDIT_FIELDS = (
+        ('status', {'text': 'enables or disables stat/log collection'}),
+        ('location', {'text': 'for display/filtering only'}),
+    )
+
+    LIST_MRELATIONS = (
+        ('ipblocks', 'network/ipblock', {'title': 'IP Blocks'}),
+        ('groups', 'network/group', {})
+    )
+
+    EDIT_MRELATIONS = (
+        ('groups', 'network/group', {}),
+    )
+
+    ROUTES = (
+        ('/stats', ['GET'], api_get_device_stats, 'view'),
+    )
+
+    MONITOR_TASK_PREFIX = 'monitor-device-'
 
     # Should we collect stats for this device & any virtual devices
-    status = db.Column(db.Enum('Active', 'Suspended'), default='Active', server_default='Active', nullable=False)
-    # CentOS/Debian/Ubuntu/etc
-    config = db.Column(db.String(16), nullable=False)
+    status = db.Column(
+        db.Enum('Active', 'Suspended'),
+        default='Active', server_default='Active', nullable=False
+    )
 
     # For display/filters only
     location = db.Column(db.String(64))
 
     # Stats
-    stat_interval = db.Column(db.Integer, nullable=False, default=10, server_default='10')
+    stat_interval = db.Column(db.Integer,
+        nullable=False, default=10, server_default='10'
+    )
 
     # Device groups
     groups = db.relationship('DeviceGroup', secondary=device__group)
@@ -84,6 +115,7 @@ class Device(BaseObject, db.Model):
     ssh_port = db.Column(db.Integer, nullable=False)
     ssh_user = db.Column(db.String(64), nullable=False)
     ssh_sudo = db.Column(db.Boolean, nullable=False)
+
     # Flag to set whether we've ever connected to the above SSH details
     # the details are set instantly and a background task is run to change this flag
     # NULL = untested
@@ -94,12 +126,35 @@ class Device(BaseObject, db.Model):
     _connection = None
     _sftp = None
 
+    # Base exception
+    class DeviceError(Exception):
+        pass
+
     # SSH errors
-    class NotConnected(DeviceError): pass
-    class ConnectionError(DeviceError): pass
-    class CommandError(DeviceError): pass
-    class ScriptError(DeviceError): pass
-    class FileError(DeviceError): pass
+    class NotConnected(DeviceError):
+        pass
+
+    class ConnectionError(DeviceError):
+        pass
+
+    class CommandError(DeviceError):
+        pass
+
+    class FileError(DeviceError):
+        pass
+
+    class FunctionError(DeviceError):
+        pass
+
+    def pre_view(self):
+        if self.status == 'Active':
+            # Create websocket request for client to receive monitor updates
+            request_key = make_websocket_request(
+                'core/task_subscribe', '{0}{1}'.format(self.MONITOR_TASK_PREFIX, self.id)
+            )
+            flash_request('device_monitor', request_key)
+
+            # Create websocket request for the processes tab
 
     def is_valid(self, new=False):
         '''
@@ -115,7 +170,7 @@ class Device(BaseObject, db.Model):
             for field, value in data.iteritems():
                 setattr(self, field, value)
         except ValueError:
-            return False, 'Invalid stat interval'
+            raise self.ValidationError('Invalid stat interval')
 
         # Data affecting SSH connection
         try:
@@ -125,7 +180,7 @@ class Device(BaseObject, db.Model):
                 'ssh_port': int(request.form.get('ssh_port'))
             }
         except ValueError:
-            return False, 'Invalid SSH port'
+            raise self.ValidationError('Invalid SSH port')
 
         # New, failed or any different SSH related fields
         if new or self.ssh_connected is not True or any(
@@ -150,56 +205,68 @@ class Device(BaseObject, db.Model):
             # Create websocket request for client to watch progress
             request_key = make_websocket_request('core/task_subscribe', task_id)
             flash_request('device_ssh_connect', request_key)
-
-        return True, None
+        else:
+            # Reload tasks to get any changed info
+            self.start_update_tasks()
 
     def _list_tasks(self):
-        '''Tasks which each device should have running all the time, assuming active & ssh_connected'''
-        return [
-            # Monitor
-            ('monitor-device-{0}'.format(self.id), 'network/device_monitor', {
-                'device_id': self.id
-            })
-        ]
+        return [(
+            '{0}{1}'.format(self.MONITOR_TASK_PREFIX, self.id),
+            'network/device_monitor',
+            {'device_id': self.id}
+        )]
 
     def stop_tasks(self):
         for (task_id, _, _) in self._list_tasks():
             stop_task(task_id)
+
     def start_tasks(self):
-        if self.status != 'Active' or not self.ssh_connected: return
+        if self.status != 'Active' or not self.ssh_connected:
+            return
+
         for task in self._list_tasks():
             start_task(*task)
+
     def start_update_tasks(self):
-        if self.status != 'Active' or not self.ssh_connected: return
+        if self.status != 'Active' or not self.ssh_connected:
+            return
+
         for task in self._list_tasks():
             start_update_task(*task)
 
-    # Tasks: the functions onwards are SSH/remote and used in tasks, so as to avoid long waits over HTTP
     def connect(self, password=None):
-        '''Connect this device to it's bound SSH host'''
+        '''Connect this device to it's bound SSH host.'''
+        logger.debug('Connecting to device #{}: {}'.format(self.id, self.ssh_host))
+
         kwargs = {
-            'user': self.ssh_user,
+            'username': self.ssh_user,
             'port': self.ssh_port,
-            'num_retries': config.SSH_RETRIES,
-            'timeout': config.SSH_TIMEOUT
+            'timeout': settings.SSH_TIMEOUT
         }
 
         if password:
             kwargs['password'] = password
         else:
             kwargs['pkey'] = RSAKey.from_private_key_file(
-                filename=config.SSH_KEY_PRIVATE,
-                password=config.SSH_KEY_PASSWORD
+                filename=settings.SSH_KEY_PRIVATE,
+                password=settings.SSH_KEY_PASSWORD
             )
 
+        client = SSHClient()
+        client.set_missing_host_key_policy(MissingHostKeyPolicy())
+
         try:
-            self._connection = SSHClient(self.ssh_host, **kwargs)
-            self._connected = True
-        except (AuthenticationException, UnknownHostException, ConnectionErrorException, SSHException) as e:
+            client.connect(self.ssh_host, **kwargs)
+        except (
+            SSHException, AuthenticationException, socket_error, gaierror
+        ) as e:
             raise self.ConnectionError(str(e))
 
+        self._connection = client
+        self._connected = True
+
     def put(self, data, destination):
-        '''Copy a file to the remote device'''
+        '''Copy data to the remote device's filesystem.'''
         if not self._connected:
             raise self.NotConnected()
 
@@ -212,35 +279,68 @@ class Device(BaseObject, db.Model):
         file.write(data)
         file.close()
 
-    def execute(self, command):
-        '''Execute a command on the remote device'''
+    def execute(self, command, sudo=False):
+        '''Execute a command on the remote device.'''
         if not self._connected:
             raise self.NotConnected()
 
-        # Run the command
-        channel, _, stdout, stderr = self._connection.exec_command(command)
-        stdout = '\n'.join(line for line in stdout)
-        stderr = '\n'.join(line for line in stderr)
+        # If sudo, wrap w/sudo & bash
+        if sudo:
+            command = 'sudo -S bash -c "{}"'.format(command)
+        # Else just wrap w/bash
+        else:
+            command = 'bash -c "{}"'.format(command)
+
+        logger.debug('Executing command on device #{}: {}'.format(self.id, command))
+
+        # Run the command, get stdout, stderr & the channel
+        _, stdout, stderr = self._connection.exec_command(command)
+        channel = stdout.channel
+
+        # We have to iterate to get an exit_status
+        # so we return stdout/stderr as lists of each line of output
+        stdout = [line for line in stdout]
+        stderr = [line for line in stderr]
 
         # Return depending on the exit code
-        if channel.exit_status == 0:
+        # when the server provides no exit status, paramiko will return -1
+        # here we assume this is correct, and return stdout as normal
+        if channel.exit_status <= 0:
             return stdout
         else:
             # The number of programs which don't use stderr is quite insane
-            raise self.ScriptError(
-                stderr if len(stderr) > 0 else stdout
-            )
+            raise self.CommandError(channel.exit_status, stderr, stdout)
 
-    def execute_script(self, script, executable='sh'):
-        '''Execute a script on the remote device'''
-        home = self.execute('echo $HOME')
+    def execute_multi(self, *commands):
+        '''Multi-command wrapper around _execute above.'''
+        return [self.execute(command) for command in commands]
 
-        # Ensure our tmp directory exists
-        self.execute('mkdir -p {}/.oxypanel'.format(home))
+    def get_cpu_stats(self):
+        '''Take two readings of CPU stats 1s apart, and calculate usage during.'''
+        return parse_cpu_stats(
+            self.execute('cat /proc/stat; sleep 1; cat /proc/stat')
+        )
 
-        # Write script -> tmp remote file
-        filename = '{}/.oxypanel/{}'.format(home, str(uuid4()))
-        self.put(script, filename)
+    def get_memory_stats(self):
+        '''Get current memory usage from /proc/meminfo.'''
+        return parse_memory_stats(
+            self.execute('cat /proc/meminfo')
+        )
 
-        # Sh script
-        return self.execute('{0} {1}'.format(executable, filename))
+    def get_disk_stats(self):
+        '''Get current disk usage.'''
+        return parse_disk_stats(
+            self.execute('df -B 1000')
+        )
+
+    def get_disk_io_stats(self):
+        '''Take two readings of disk IO stats 1s apart, and calculate usage during.'''
+        return parse_disk_io_stats(
+            self.execute('cat /proc/diskstats; sleep 1s; cat /proc/diskstats')
+        )
+
+    def get_network_io_stats(self):
+        '''Take two readings of network IO stats 1s apart and calculate usage during.'''
+        return parse_network_io_stats(
+            self.execute('cat /proc/net/dev; sleep 1s; cat /proc/net/dev')
+        )
