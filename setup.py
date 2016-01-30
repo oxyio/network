@@ -23,7 +23,7 @@ packages = (
 
 if __name__ == '__main__':
     setup(
-        name='oxy.io Network',
+        name='oxy.io-Network',
         version=0,
         author='Oxygem',
         author_email='hello@oxygem.com',
