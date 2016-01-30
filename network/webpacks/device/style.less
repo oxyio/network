@@ -1,0 +1,71 @@
+// Import from oxy.io package
+@import '~oxy.io/oxyio/webpacks/base/less/shared/colours.less';
+@import '~oxy.io/oxyio/webpacks/base/less/shared/dimensions.less';
+
+
+div#device {
+    div#status {
+        span.stat {
+            display: block;
+            margin-top: 5px;
+            font-size: 20px;
+        }
+
+        div#bars {
+            margin-top: 20px;
+
+            h3 {
+                margin-top: 40px;
+            }
+
+            .bar {
+                padding: 2px;
+                margin-bottom: 10px;
+                background: @grey;
+                color: @black;
+                position: relative;
+                border-radius: @borderRadius;
+
+                span {
+                    position: relative;
+                }
+
+                div {
+                    top: 0;
+                    bottom: 0;
+                    left: 0;
+                    position: absolute;
+                    background: @darkGrey;
+                    border-radius: @borderRadius;
+                }
+
+                &.green {
+                    color: @white;
+                    background: @green;
+
+                    div {
+                        background: @darkGreen;
+                    }
+                }
+
+                &.orange {
+                    color: @white;
+                    background: @orange;
+
+                    div {
+                        background: @darkOrange;
+                    }
+                }
+
+                &.red {
+                    color: @white;
+                    background: @red;
+
+                    div {
+                        background: @darkRed;
+                    }
+                }
+            }
+        }
+    }
+}

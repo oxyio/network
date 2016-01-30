@@ -1,0 +1,41 @@
+{% extends 'object/base.html' %}
+
+
+{% block content %}
+<div id="group" class="block base">
+    <div class="block third">
+        <h3 class="top">Devices</h3>
+
+        <table>
+            <thead><tr>
+                <th>ID</th>
+                <th>Name</th>
+            </tr></thead>
+            <tbody>
+                {% for device in object.devices %}<tr>
+                    <td>{{ device.id }}</td>
+                    <td><a href="{{ device.view_url }}">{{ device.name }}</a></td>
+                </tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="block two-third">
+        <!-- Graph of network (bytes, packets, drop, errors) -->
+        <div
+            id="test"
+            class="graph"
+            data-graph="total"
+            data-graph-title="Network IO"
+            data-graph-endpoint="{{ object.stats_api_url }}"
+            data-graph-type="network_io"
+            data-graph-details='{
+                "Bytes in/out": ["receive_bytes", "transmit_bytes"],
+                "Packets": ["receive_packets", "transmit_packets"],
+                "Drop": ["receive_drop", "transmit_drop"],
+                "Errors": ["receive_errors", "transmit_errors"]
+            }'
+        ></div>
+    </div>
+</div>
+{% endblock %}

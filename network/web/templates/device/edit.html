@@ -1,0 +1,36 @@
+{% import 'function/forms.html' as forms %}
+{% extends 'object/base.html' %}
+
+{% block content %}
+    <form action="" method="post" class="block base">
+        <div class="third block">
+            {{ forms.fields(edit_form, object) }}
+
+            {{ csrf_input() }}
+        </div>
+
+        <div class="third block align-bottom">
+            <h2>SSH Details</h2>
+
+            {% if object.ssh_connected == False %}
+                <div class="message error">
+                    oxy.io could not connect using these SSH details.
+                </div>
+            {% elif object.ssh_connected == None and object._connecting == False %}
+                <div class="message warning">
+                    SSH test failed, please try again.
+                </div>
+            {% endif %}
+
+            <div class="block">
+                {% set ssh_form = {
+                    'submit': True,
+                    'submit_text': 'Update Device'
+                } %}
+                {% include 'device/ssh_form.html' %}
+            </div>
+
+            {{ csrf_input() }}
+        </div>
+    </form>
+{% endblock %}

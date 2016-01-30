@@ -1,0 +1,92 @@
+{% extends 'object/base.html' %}
+
+
+{% block css %}
+    {{ super() }}
+    {{ webpack_css('network/device') }}
+{% endblock %}
+
+
+{% block js %}
+    {{ super() }}
+    {{ webpack_js('network/commons') }}
+    {{ webpack_js('network/device') }}
+{% endblock %}
+
+
+{% block content %}
+    <div id="device" class="block base">
+        <div class="block eighth">
+            <ul class="tablinks" data-tab-group="device">
+                <li class="active" data-tab-link="status"><a href="#">Status</a></li>
+                <li data-tab-link="processes"><a href="#">Processess</a></li>
+                <li><a href="#"><strike>Network</strike></a></li>
+            </ul>
+        </div>
+
+        <div class="block nine-eighth" data-tabs="device">
+            <div
+                class="block base"
+                data-tab="status"
+                data-websocket-key="{{ get_flashed_request('device_monitor') }}"
+            >
+                <div class="block third">
+                    <div id="status" data-device-status></div>
+                </div>
+
+                <div class="block two-third">
+                    <!-- Graph of CPU usage -->
+                    <div
+                        class="graph"
+                        data-graph="fixed"
+                        data-graph-title="CPU Usage"
+                        data-graph-endpoint="{{ object.stats_api_url }}"
+                        data-graph-type="cpu"
+                        data-graph-keys="cpu"
+                        data-graph-details="user,system,nice,iowait,irq,soft_irq"
+                    ></div>
+
+                    <!-- Graph of network (bytes, packets, drop, errors) -->
+                    <div
+                        id="test"
+                        class="graph"
+                        data-graph="total"
+                        data-graph-title="Network IO"
+                        data-graph-endpoint="{{ object.stats_api_url }}"
+                        data-graph-type="network_io"
+                        data-graph-keys
+                        data-graph-keyname="Interface"
+                        data-graph-details='{
+                            "Bytes in/out": ["receive_bytes", "transmit_bytes"],
+                            "Packets": ["receive_packets", "transmit_packets"],
+                            "Drop": ["receive_drop", "transmit_drop"],
+                            "Errors": ["receive_errors", "transmit_errors"]
+                        }'
+                    ></div>
+
+                    <!-- Graph of disk (rw, time, merges, sectors) -->
+                    <div
+                        id="test"
+                        class="graph"
+                        data-graph="total"
+                        data-graph-title="Disk IO"
+                        data-graph-endpoint="{{ object.stats_api_url }}"
+                        data-graph-type="disk_io"
+                        data-graph-keys
+                        data-graph-keyname="Disk"
+                        data-graph-details='{
+                            "Reads/Writes": ["reads", "writes"],
+                            "Time (ms)": ["read_time", "write_time"],
+                            "Merges": ["read_merges", "write_merges"],
+                            "Sectors": ["read_sectors", "write_sectors"]
+                        }'
+                    ></div>
+                </div>
+            </div>
+
+            <div class="block wide hidden" data-tab="processes">
+                ALL THE PROCESSES!
+            </div>
+        </div>
+    </div>
+{% endblock %}
