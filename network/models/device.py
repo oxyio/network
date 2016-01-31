@@ -278,10 +278,16 @@ class Device(Object, db.Model):
         task_app.helpers.reload_task(self.monitor_task_id)
 
     def ensure_monitor(self):
-        task_app.helpers.restart_if_state(
-            self.monitor_task_id,
-            ('ERROR', 'EXCEPTION')
-        )
+        task = task_app.helpers.get_task(self.monitor_task_id)
+
+        if not task:
+            self.start_monitor()
+            return
+
+        # If not running, restart by requeueing - this won't requeue if the task is
+        # already present in the new queue.
+        if task.get('state') != 'RUNNING':
+            task_app.helpers.restart_task(self.monitor_task_id)
 
     # SSH
     #
