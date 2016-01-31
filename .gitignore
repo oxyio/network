@@ -9,3 +9,4 @@
 
 node_modules
 dist/
+network/web/static/dist/
