@@ -6,3 +6,6 @@
 .vagrant/
 
 *.egg-info
+
+node_modules
+dist/
