@@ -16,28 +16,26 @@
 
 {% block content %}
     <div id="device" class="block base">
-        <div class="block eighth">
-            <ul class="tablinks" data-tab-group="device">
+        <div class="block wide">
+            <ul class="horizontal-tabs" data-tab-group="device">
                 <li class="active" data-tab-link="status"><a href="#">Status</a></li>
-                <li data-tab-link="processes"><a href="#">Processess</a></li>
+                <li data-tab-link="facts"><a href="#">Facts</a></li>
                 <li><a href="#"><strike>Network</strike></a></li>
             </ul>
         </div>
 
-        <div class="block nine-eighth" data-tabs="device">
+        <div class="block wide" data-tabs="device">
             <div
                 class="block base"
                 data-tab="status"
                 data-websocket-key="{{ get_flashed_request('device_monitor') }}"
             >
-                <div class="block third">
-                    <div id="status" data-device-status></div>
-                </div>
+                <div id="status" class="block wide" data-device-status></div>
 
-                <div class="block two-third">
+                <div class="block base">
                     <!-- Graph of CPU usage -->
                     <div
-                        class="graph"
+                        class="graph block half"
                         data-graph="fixed"
                         data-graph-title="CPU Usage"
                         data-graph-endpoint="{{ object.stats_api_url }}"
@@ -48,8 +46,7 @@
 
                     <!-- Graph of network (bytes, packets, drop, errors) -->
                     <div
-                        id="test"
-                        class="graph"
+                        class="graph block half"
                         data-graph="total"
                         data-graph-title="Network IO"
                         data-graph-endpoint="{{ object.stats_api_url }}"
@@ -63,11 +60,12 @@
                             "Errors": ["receive_errors", "transmit_errors"]
                         }'
                     ></div>
+                </div>
 
+                <div class="block base">
                     <!-- Graph of disk (rw, time, merges, sectors) -->
                     <div
-                        id="test"
-                        class="graph"
+                        class="graph block half"
                         data-graph="total"
                         data-graph-title="Disk IO"
                         data-graph-endpoint="{{ object.stats_api_url }}"
@@ -84,8 +82,8 @@
                 </div>
             </div>
 
-            <div class="block wide hidden" data-tab="processes">
-                ALL THE PROCESSES!
+            <div class="block wide hidden" data-tab="facts">
+                ALL THE FACTS!
             </div>
         </div>
     </div>

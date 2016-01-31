@@ -177,8 +177,8 @@ export default class Status extends Component {
         }, []);
 
         return (
-            <div>
-                <div className='block base'>
+            <div className='block base'>
+                <div className='block third'>
                     <div className='block third'>
                         <strong>Load</strong>
                         <span className='stat'>{this.state.load}</span>
@@ -193,18 +193,21 @@ export default class Status extends Component {
                     </div>
                 </div>
 
-                <div id='bars' className='block wide'>
+                <div className='block third'>
                     <strong>CPU</strong>
                     <div className={'bar ' + this.state.cpuColor}>
                         <span>{this.state.cpuPercentage}%</span>
                     </div>
+
 
                     <strong>Memory</strong>
                     <div className={'bar ' + this.state.memoryColor}>
                         <span>{this.state.memoryPercentage}%</span>
                     </div>
 
-                    <h3>Disks</h3>
+                </div>
+
+                <div className='block third'>
                     {disks}
                 </div>
             </div>

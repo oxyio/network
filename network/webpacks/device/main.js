@@ -6,12 +6,12 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import 'device/style.less';
-import Status from 'device/status';
+import Status from 'device/components/Status';
 
 // Get DOM bits
 const $device = document.querySelector('#device');
 const $statusTab = $device.querySelector('[data-tab=status]');
-const $processesTab = $device.querySelector('[data-tab=processes]');
+const $factsTab = $device.querySelector('[data-tab=facts]');
 
 
 // Render the Reacts!
@@ -28,6 +28,6 @@ window.addEventListener('load', () => {
 
 
 // TODO: remove this addTabLoader crap!
-$processesTab.addTabLoader(function() {
-    console.log('LOAD DE PROCESSES');
+$factsTab.addTabLoader(function() {
+    console.log('LOAD DE FACTS');
 });

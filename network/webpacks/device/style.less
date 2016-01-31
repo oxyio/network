@@ -5,65 +5,59 @@
 
 div#device {
     div#status {
+        padding-bottom: 50px;
+
         span.stat {
             display: block;
             margin-top: 5px;
             font-size: 20px;
         }
 
-        div#bars {
-            margin-top: 20px;
+        .bar {
+            padding: 2px;
+            margin-bottom: 10px;
+            background: @grey;
+            color: @black;
+            position: relative;
+            border-radius: @borderRadius;
 
-            h3 {
-                margin-top: 40px;
+            span {
+                position: relative;
             }
 
-            .bar {
-                padding: 2px;
-                margin-bottom: 10px;
-                background: @grey;
-                color: @black;
-                position: relative;
+            div {
+                top: 0;
+                bottom: 0;
+                left: 0;
+                position: absolute;
+                background: @darkGrey;
                 border-radius: @borderRadius;
+            }
 
-                span {
-                    position: relative;
-                }
+            &.green {
+                color: @white;
+                background: @green;
 
                 div {
-                    top: 0;
-                    bottom: 0;
-                    left: 0;
-                    position: absolute;
-                    background: @darkGrey;
-                    border-radius: @borderRadius;
+                    background: @darkGreen;
                 }
+            }
 
-                &.green {
-                    color: @white;
-                    background: @green;
+            &.orange {
+                color: @white;
+                background: @orange;
 
-                    div {
-                        background: @darkGreen;
-                    }
+                div {
+                    background: @darkOrange;
                 }
+            }
 
-                &.orange {
-                    color: @white;
-                    background: @orange;
+            &.red {
+                color: @white;
+                background: @red;
 
-                    div {
-                        background: @darkOrange;
-                    }
-                }
-
-                &.red {
-                    color: @white;
-                    background: @red;
-
-                    div {
-                        background: @darkRed;
-                    }
+                div {
+                    background: @darkRed;
                 }
             }
         }
