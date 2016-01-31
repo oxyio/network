@@ -24,9 +24,9 @@ class Connect(Task):
 
     NAME = 'network/device_connect'
 
-    def __init__(self, **task_data):
-        self.device_id = task_data['device_id']
-        self.password = task_data['password']
+    def __init__(self, device_id, password=None):
+        self.device_id = device_id
+        self.password = password
 
     def start(self):
         # Get the device
@@ -82,7 +82,7 @@ class Monitor(Task):
     FIXED_STATS = (
         ('cpu', 'cat /proc/stat; sleep 1; cat /proc/stat', parse_cpu_stats),
         ('memory', 'cat /proc/meminfo', parse_memory_stats),
-        ('disk', 'df -B 1000', parse_disk_stats)
+        ('disk', 'df -PB 1000', parse_disk_stats)
     )
 
     TOTAL_STATS = (
@@ -90,9 +90,9 @@ class Monitor(Task):
         ('network_io', 'cat /proc/net/dev', parse_network_io_stats)
     )
 
-    def __init__(self, **task_data):
+    def __init__(self, device_id):
         # Get our device based on the task data
-        self.device = Device.query.get(task_data['device_id'])
+        self.device = Device.query.get(device_id)
 
         self._previous_stats = {}
 
