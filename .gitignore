@@ -4,3 +4,5 @@
 # Vagrant
 .bundle/
 .vagrant/
+
+*.egg-info
