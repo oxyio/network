@@ -9,13 +9,13 @@ from oxyio.app import db
 from oxyio.app.module_loader import has_module
 from oxyio.models.item import Item
 
-# oxyio.cloud is an optional module
+from .device import Device
+
+# Attempt to load the Service object
 try:
-    from oxyio.cloud import Service
+    from oxyio.cloud.models.service import Service
 except ImportError:
     Service = None
-
-from .device import Device
 
 
 class Ip(Item, db.Model):
