@@ -1,6 +1,3 @@
-# Database migrations
-recursive-include network/migrations *
-
 # Templates & static files (includes compiled webpacks)
 recursive-include network/web/templates *
 recursive-include network/web/static *

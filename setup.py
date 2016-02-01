@@ -13,6 +13,7 @@ install_requires = (
 # oxy.io Network Python, see MANIFEST.in for HTML/etc
 packages = (
     'oxyio.network',
+    'oxyio.network.migrations',
     'oxyio.network.models',
     'oxyio.network.tasks',
     'oxyio.network.web',
