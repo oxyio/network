@@ -6,22 +6,7 @@ import _ from 'lodash';
 import React, { Component } from 'react';
 
 
-export default class Status extends Component {
-    constructor(props) {
-        super(props)
-
-        this.state = {
-            load: 0,
-            networkIn: 0,
-            networkOut: 0,
-            cpuPercentage: 0,
-            cpuColor: '',
-            memoryPercentage: 0,
-            memoryColor: '',
-            disks: []
-        };
-    }
-
+class Bar extends Component {
     getPercentageColor(percent) {
         if (percent >= 90)
             return 'red';
@@ -37,6 +22,39 @@ export default class Status extends Component {
 
     formatPercentage(percent) {
         return percent.toFixed(1);
+    }
+
+    render() {
+        return (
+            <div>
+                <strong>{this.props.title}</strong>
+
+                <div className={'bar ' + this.getPercentageColor(this.props.percent)}>
+                    <div style={{width: this.props.percent + '%'}}></div>
+                    <span>
+                        {this.formatPercentage(this.props.percent)}%
+                    </span>
+                </div>
+            </div>
+        );
+    }
+}
+
+
+export default class Status extends Component {
+    constructor(props) {
+        super(props)
+
+        this.state = {
+            load: 0,
+            networkIn: 0,
+            networkOut: 0,
+            cpuPercentage: 0,
+            cpuColor: '',
+            memoryPercentage: 0,
+            memoryColor: '',
+            disks: []
+        };
     }
 
     parseNetworkStats(stats) {
@@ -66,8 +84,7 @@ export default class Status extends Component {
         }, 0);
 
         this.setState({
-            cpuPercentage: this.formatPercentage(totalPercent),
-            cpuColor: this.getPercentageColor(totalPercent)
+            cpuPercentage: totalPercent
         });
     }
 
@@ -93,8 +110,7 @@ export default class Status extends Component {
         const usedPercent = (used / data.total) * 100;
 
         this.setState({
-            memoryPercentage: this.formatPercentage(usedPercent),
-            memoryColor: this.getPercentageColor(usedPercent)
+            memoryPercentage: usedPercent
         });
     }
 
@@ -114,8 +130,7 @@ export default class Status extends Component {
 
             memo.push({
                 name: name,
-                percentage: this.formatPercentage(percentage),
-                color: this.getPercentageColor(percentage)
+                percentage: percentage
             });
 
             return memo;
@@ -165,13 +180,13 @@ export default class Status extends Component {
 
     render() {
         const disks = _.reduce(this.state.disks, (memo, disk) => {
-            memo.push(<div key={disk.name}>
-                <strong>{disk.name}</strong>
-                <div className={'bar ' + disk.color}>
-                    <div style={{width: disk.percentage + '%'}}></div>
-                    <span>{disk.percentage}%</span>
-                </div>
-            </div>);
+            memo.push(
+                <Bar
+                    key={disk.name}
+                    title={`Disk: ${disk.name}`}
+                    percent={disk.percentage}
+                />
+            );
 
             return memo;
         }, []);
@@ -194,17 +209,15 @@ export default class Status extends Component {
                 </div>
 
                 <div className='block third'>
-                    <strong>CPU</strong>
-                    <div className={'bar ' + this.state.cpuColor}>
-                        <span>{this.state.cpuPercentage}%</span>
-                    </div>
+                    <Bar
+                        title='CPU'
+                        percent={this.state.cpuPercentage}
+                    />
 
-
-                    <strong>Memory</strong>
-                    <div className={'bar ' + this.state.memoryColor}>
-                        <span>{this.state.memoryPercentage}%</span>
-                    </div>
-
+                    <Bar
+                        title='Memory'
+                        percent={this.state.memoryPercentage}
+                    />
                 </div>
 
                 <div className='block third'>
