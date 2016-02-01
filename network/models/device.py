@@ -12,8 +12,11 @@ from paramiko import (
 from oxyio import settings
 from oxyio.app import db, task_app
 from oxyio.log import logger
+from oxyio.util import server_only, worker_only
+
 from oxyio.models.object import Object
 from oxyio.models.item import Item
+
 from oxyio.web.flashes import flash_request, flash_task_subscribe
 from oxyio.web.request import get_request_data
 from oxyio.web.websockets import make_websocket_request
@@ -171,6 +174,7 @@ class Device(Object, db.Model):
     # oxy.io
     #
 
+    @server_only
     def pre_view(self):
         if self.status == 'Active':
             # Create websocket request for client to receive monitor updates, this will
@@ -182,6 +186,7 @@ class Device(Object, db.Model):
 
             # Create websocket request for the processes tab
 
+    @server_only
     def check_apply_edit(self, request_data):
         # Validate int input
         for field in ('stat_interval', 'ssh_port'):
@@ -225,6 +230,7 @@ class Device(Object, db.Model):
         elif update:
             self.reload_monitor()
 
+    @server_only
     def post_add_edit(self):
         # If we're active and already connected, ensure the monitor is running
         if self.status == 'Active' and self.ssh_connected:
@@ -250,9 +256,11 @@ class Device(Object, db.Model):
         # Set connecting for the remainder of the request
         self._connecting = True
 
+    @server_only
     def post_edit(self):
         self.post_add_edit()
 
+    @server_only
     def post_add(self):
         self.post_add_edit()
 
@@ -292,6 +300,7 @@ class Device(Object, db.Model):
     # SSH
     #
 
+    @worker_only
     def connect(self, password=None):
         '''Connect this device to it's bound SSH host.'''
 
@@ -324,6 +333,7 @@ class Device(Object, db.Model):
         self._connection = client
         self._connected = True
 
+    @worker_only
     def put(self, data, destination):
         '''Copy data to the remote device's filesystem.'''
 
@@ -339,6 +349,7 @@ class Device(Object, db.Model):
         f.write(data)
         f.close()
 
+    @worker_only
     def execute(self, command, sudo=False):
         '''Execute a command on the remote device.'''
 
@@ -372,6 +383,7 @@ class Device(Object, db.Model):
             # The number of programs which don't use stderr is quite insane
             raise self.CommandError(channel.exit_status, stderr, stdout)
 
+    @worker_only
     def execute_multi(self, *commands):
         '''Multi-command wrapper around _execute above.'''
 
