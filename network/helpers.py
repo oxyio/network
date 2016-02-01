@@ -60,8 +60,8 @@ def parse_memory_stats(stats):
 
         if key in key_map:
             key = key.strip('')
-            type, stat = key_map[key]
-            type[stat] = int(value)
+            type_, stat = key_map[key]
+            type_[stat] = int(value)
 
     return {
         'memory': memory_details,
@@ -77,9 +77,12 @@ def parse_disk_stats(stats):
 
     for line in stats:
         bits = line.split()
-        type, key, details = bits[0], bits[5], bits[1:4]
+        type_, key, details = bits[0], bits[5], bits[1:4]
 
-        if type in ['Filesystem', 'none']:
+        if type_ in ['Filesystem', 'none']:
+            continue
+
+        if key.startswith('/dev') or key.startswith('/run'):
             continue
 
         disk = {
