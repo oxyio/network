@@ -16,7 +16,7 @@ ROUTES = (
     ('/status', ['GET'], status)
 )
 
-# Module settings (admin set overrides in database)
+# Module settings (configurable in database)
 SETTINGS = (
-    ('network.stat_interval', 10, 'Default stat interval for device monitors'),
+    ('stat_interval', int, 10, 'How often to collect device stats.'),
 )

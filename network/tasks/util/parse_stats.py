@@ -1,6 +1,6 @@
 # oxy.io Network
-# File: helpers.py
-# Desc: general helpers for the network module (parsing of /proc, etc)
+# File: network/tasks/util/parse_stats.py
+# Desc: parse stats for the device monitor
 
 from __future__ import division
 

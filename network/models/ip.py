@@ -11,12 +11,6 @@ from oxyio.models.item import Item
 
 from .device import Device
 
-# Attempt to load the Service object
-try:
-    from oxyio.cloud.models.service import Service
-except ImportError:
-    Service = None
-
 
 class Ip(Item, db.Model):
     # Config
@@ -57,8 +51,10 @@ class Ip(Item, db.Model):
         foreign(object_id) == Device.id
     ), backref='ips')
 
-    if Service is not None:
-        # Or cloud service
+    # Or cloud service when available
+    if has_module('cloud'):
+        from oxyio.cloud.models.service import Service
+
         service = db.relationship('Service', primaryjoin=and_(
             object_type == 'cloud/service',
             foreign(object_id) == Service.id

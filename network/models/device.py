@@ -21,7 +21,6 @@ from oxyio.web.flashes import flash_request, flash_task_subscribe
 from oxyio.web.request import get_request_data
 from oxyio.web.websockets import make_websocket_request
 
-from ..mappings import MAPPINGS
 from ..web.views.device import api_get_device_stats, api_get_device_stat_keys
 from ..web.views.group import api_get_group_stats
 
@@ -63,8 +62,8 @@ class DeviceFact(Item, db.Model):
     NAME = 'network/device/fact'
     TITLE = 'Fact'
 
-    device_id = db.Column(db.Integer,
-        db.ForeignKey('network_device.id', ondelete='CASCADE'),
+    device_id = db.Column(
+        db.Integer, db.ForeignKey('network_device.id', ondelete='CASCADE'),
         nullable=False
     )
     device = db.relationship('Device', backref=db.backref('facts'))
@@ -76,8 +75,6 @@ class Device(Object, db.Model):
 
     NAME = 'network/device'
     TITLE = 'Device'
-
-    ES_DOCUMENTS = MAPPINGS
 
     # No listing of status (just filter/edit)
     LIST_FIELDS = (
@@ -91,6 +88,7 @@ class Device(Object, db.Model):
     )
 
     LIST_MRELATIONS = (
+        # IP blocks are many to one device so we can list, but not edit, from the device
         ('ipblocks', 'network/ipblock', {'title': 'IP Blocks'}),
         ('groups', 'network/group', {})
     )

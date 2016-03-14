@@ -10,7 +10,7 @@ from oxyio.tasks.base import Task
 from oxyio.log import logger
 
 from ..models.device import Device
-from ..helpers import (
+from .util.parse_stats import (
     parse_cpu_stats, parse_memory_stats, parse_disk_stats,
     parse_disk_io_stats, parse_network_io_stats
 )
@@ -25,20 +25,17 @@ class Connect(Task):
     NAME = 'network/device_connect'
 
     def __init__(self, device_id, password=None):
-        self.device_id = device_id
+        self.device = Device.query.get(device_id)
         self.password = password
 
     def start(self):
-        # Get the device
-        device = Device.query.get(self.device_id)
-
         # Try connecting, or fail/end w/error
         try:
-            device.connect(password=self.password)
+            self.device.connect(password=self.password)
 
-        except device.ConnectionError as e:
-            device.ssh_connected = False
-            device.save()
+        except self.device.ConnectionError as e:
+            self.device.ssh_connected = False
+            self.device.save()
 
             raise self.Error('Could not connect: {0}'.format(e))
 
@@ -46,7 +43,7 @@ class Connect(Task):
 
         try:
             # Attempt to write SSH key
-            device.execute_multi(
+            self.device.execute_multi(
                 # Setup .ssh and authorized_keys
                 'mkdir -p ~/.ssh',
                 'touch ~/.ssh/authorized_keys',
@@ -57,18 +54,32 @@ class Connect(Task):
                 'chmod 600 ~/.ssh/authorized_keys',
             )
 
-        except device.CommandError as e:
-            device.ssh_connected = False
-            device.save()
+        except self.device.CommandError as e:
+            self.device.ssh_connected = False
+            self.device.save()
 
             raise self.Error('Error adding key: {0}'.format(e))
 
         # Set ssh_connected
-        device.ssh_connected = True
-        device.save()
+        self.device.ssh_connected = True
+        self.device.save()
 
         # Start the device's tasks
-        device.start_monitor()
+        self.device.start_monitor()
+
+
+class Facts(Task):
+    NAME = 'network/device_facts'
+
+    def __init__(self, device_id):
+        self.device = Device.query.get(device_id)
+
+    def start(self):
+        try:
+            self.device.connect()
+
+        except self.device.ConnectionError:
+            raise self.Error('Could not connect to device')
 
 
 class Monitor(Task):

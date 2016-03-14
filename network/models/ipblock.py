@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload, column_property
 
 from oxyio.app import db
 from oxyio.app.module_loader import has_module
+from oxyio.util import server_only
 from oxyio.models.object import Object
 
 from .ip import Ip
@@ -110,6 +111,7 @@ class IpBlock(Object, db.Model):
     # oxy.io
     #
 
+    @server_only
     def pre_view(self):
         # Attach a IPNetwork object to self
         self.network = IPNetwork(self.cidr)
@@ -124,6 +126,7 @@ class IpBlock(Object, db.Model):
             for field in fields
         ])
 
+    @server_only
     def is_valid(self):
         # Check CIDR
         try:
