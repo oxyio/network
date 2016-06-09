@@ -48,7 +48,7 @@ class DeviceGroup(Object, db.Model):
     )
 
     ROUTES = (
-        ('/stats', ['GET'], api_get_group_stats, 'view'),
+        ('stats', ['GET'], api_get_group_stats, 'view'),
     )
 
     devices = db.relationship('Device', secondary=device__group)
@@ -98,8 +98,8 @@ class Device(Object, db.Model):
     )
 
     ROUTES = (
-        ('/stats', ['GET'], api_get_device_stats, 'view'),
-        ('/stats_keys', ['GET'], api_get_device_stat_keys, 'view')
+        ('stats', ['GET'], api_get_device_stats, 'view'),
+        ('stats_keys', ['GET'], api_get_device_stat_keys, 'view')
     )
 
     MONITOR_TASK_PREFIX = 'monitor-device-'

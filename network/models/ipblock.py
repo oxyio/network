@@ -47,10 +47,10 @@ class IpBlock(Object, db.Model):
     )
 
     ROUTES = (
-        ('/add_ips', ['POST'], ipblock_add_ips, 'edit'),
-        ('/auto_add_ips', ['POST'], ipblock_auto_add_ips, 'edit'),
-        ('/generate_ips', ['POST'], ipblock_generate_ips, 'edit'),
-        ('/delete_ip', ['POST'], ipblock_delete_ip, 'edit')
+        ('add_ips', ['POST'], ipblock_add_ips, 'edit'),
+        ('auto_add_ips', ['POST'], ipblock_auto_add_ips, 'edit'),
+        ('generate_ips', ['POST'], ipblock_generate_ips, 'edit'),
+        ('delete_ip', ['POST'], ipblock_delete_ip, 'edit')
     )
 
     # Db columns
